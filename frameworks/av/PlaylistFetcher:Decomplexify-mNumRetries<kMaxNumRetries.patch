@@ -1,0 +1,35 @@
+From 871648f213bf7c77e0a5ea91ec0236ad3e7dfecd Mon Sep 17 00:00:00 2001
+From: dragonGR <alex@dragongr.dev>
+Date: Wed, 20 Jul 2022 17:54:12 +0300
+Subject: [PATCH] PlaylistFetcher: Decomplexify mNumRetries < kMaxNumRetries
+
+There's no point to have them in the same check. Place them in a dedicated if and print ERROR_END_OF_STREAM on notify as well.
+
+Signed-off-by: Alex Tsanis <alex@dragongr.dev>
+Change-Id: I734476505043c48d4092e8e6206e77c0c5ff666b
+---
+ media/libstagefright/httplive/PlaylistFetcher.cpp | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/httplive/PlaylistFetcher.cpp b/media/libstagefright/httplive/PlaylistFetcher.cpp
+index 907b32605f..c311f146bd 100644
+--- a/media/libstagefright/httplive/PlaylistFetcher.cpp
++++ b/media/libstagefright/httplive/PlaylistFetcher.cpp
+@@ -1146,9 +1146,16 @@ bool PlaylistFetcher::initDownloadState(
+     if (mSeqNumber < firstSeqNumberInPlaylist
+             || mSeqNumber > lastSeqNumberInPlaylist
+             || err != OK) {
+-        if ((err != OK || !mPlaylist->isComplete()) && mNumRetries < kMaxNumRetries) {
++        if (err != OK || !mPlaylist->isComplete()) {
+             ++mNumRetries;
+ 
++            if (mNumRetries > kMaxNumRetries && !bufferAvailable()) {
++                ALOGE("Unable to find %d in playlist(contains %d - %d)", mSeqNumber, firstSeqNumberInPlaylist,
++                    lastSeqNumberInPlaylist);
++                notifyError(ERROR_END_OF_STREAM);
++                return false;
++            }
++
+             if (mSeqNumber > lastSeqNumberInPlaylist || err != OK) {
+                 // make sure we reach this retry logic on refresh failures
+                 // by adding an err != OK clause to all enclosing if's.

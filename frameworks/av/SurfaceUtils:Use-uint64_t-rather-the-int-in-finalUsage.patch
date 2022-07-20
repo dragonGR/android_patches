@@ -1,0 +1,44 @@
+From 6a3a9503c2b9b2e14b00422723323abad814331c Mon Sep 17 00:00:00 2001
+From: Alex Tsanis <alex@dragongr.dev>
+Date: Wed, 20 Jul 2022 19:14:12 +0300
+Subject: [PATCH] SurfaceUtils: use uint64_t rather the int in finalUsage
+
+Oneplus 6 (enchilada) running a AICP S build reports this:
+
+GrallocMapperPassthrough: buffer descriptor with invalid usage bits 0xffffffff00002000
+GraphicBufferAllocator: Failed to allocate (1920 x 1080) layerCount 1 format 2141391875 usage ffffffff80402900: 3
+
+After a google search, native_window_set_usage has been meant to use 64-bit int for the usage parameter along.
+Change-Id: I0f8730921c7c3d454724db34b37913907cfa5da1
+
+Change-Id: I31bdc926558d801b40329fb3ff00a3d584a9db1f
+Signed-off-by: Alex Tsanis <alex@dragongr.dev>
+---
+ media/libstagefright/SurfaceUtils.cpp | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/media/libstagefright/SurfaceUtils.cpp b/media/libstagefright/SurfaceUtils.cpp
+index 1f569efe0e2..66e748e1fb7 100644
+--- a/media/libstagefright/SurfaceUtils.cpp
++++ b/media/libstagefright/SurfaceUtils.cpp
+@@ -111,8 +111,9 @@ status_t setNativeWindowSizeFormatAndUsage(
+         }
+     }
+ 
+-    int finalUsage = usage | consumerUsage;
+-    ALOGV("gralloc usage: %#x(producer) + %#x(consumer) = %#x", usage, consumerUsage, finalUsage);
++    uint64_t finalUsage = (usage | consumerUsage) & 0xffffffffLL;
++    ALOGV("gralloc usage: %#x(producer) + %#x(consumer) = %#" PRIx64,
++            usage, consumerUsage, finalUsage);
+     err = native_window_set_usage(nativeWindow, finalUsage);
+     if (err != NO_ERROR) {
+         ALOGE("native_window_set_usage failed: %s (%d)", strerror(-err), -err);
+@@ -126,7 +127,7 @@ status_t setNativeWindowSizeFormatAndUsage(
+         return err;
+     }
+ 
+-    ALOGD("set up nativeWindow %p for %dx%d, color %#x, rotation %d, usage %#x",
++    ALOGD("set up nativeWindow %p for %dx%d, color %#x, rotation %d, usage %#" PRIx64,
+             nativeWindow, width, height, format, rotation, finalUsage);
+     return NO_ERROR;
+ }

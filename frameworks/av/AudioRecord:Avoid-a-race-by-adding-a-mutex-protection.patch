@@ -1,0 +1,42 @@
+From 6251b56658f44ed62acb391aeac81a4f5551a406 Mon Sep 17 00:00:00 2001
+From: Alex Tsanis <alex@dragongr.dev>
+Date: Wed, 20 Jul 2022 18:13:35 +0300
+Subject: [PATCH] AudioRecord: Avoid a race by adding a mutex protection
+
+Is not safe to spam AudioRecord as it's not designed to be a Multi-thread 'machine'.
+It can cause a SIGABRT and some lags while watching a video in any platform (Netflix, Video player etc.)
+
+I've found that VLC Player is calling AudioRecord's read way too much to the point it slows down the device as a whole.
+
+Change-Id: I7fcd27bb9fcdabdb01d2b18a4da0f4e51ddf0899
+Signed-off-by: Alex Tsanis <alex@dragongr.dev>
+---
+ media/libaudioclient/AudioRecord.cpp             | 2 ++
+ media/libaudioclient/include/media/AudioRecord.h | 1 +
+ 2 files changed, 3 insertions(+)
+
+diff --git a/media/libaudioclient/AudioRecord.cpp b/media/libaudioclient/AudioRecord.cpp
+index 22f0295d452..cdaaaf6b8ab 100644
+--- a/media/libaudioclient/AudioRecord.cpp
++++ b/media/libaudioclient/AudioRecord.cpp
+@@ -1135,6 +1135,8 @@ ssize_t AudioRecord::read(void* buffer, size_t userSize, bool blocking)
+         return BAD_VALUE;
+     }
+ 
++    AutoMutex lock(mReadLock);
++
+     ssize_t read = 0;
+     Buffer audioBuffer;
+ 
+diff --git a/media/libaudioclient/include/media/AudioRecord.h b/media/libaudioclient/include/media/AudioRecord.h
+index f17ee3a5077..40ad7d8d833 100644
+--- a/media/libaudioclient/include/media/AudioRecord.h
++++ b/media/libaudioclient/include/media/AudioRecord.h
+@@ -665,6 +665,7 @@ class AudioRecord : public AudioSystem::AudioDeviceCallback
+ 
+     sp<AudioRecordThread>   mAudioRecordThread;
+     mutable Mutex           mLock;
++    mutable Mutex           mReadLock;
+ 
+     std::unique_ptr<RecordingActivityTracker> mTracker;
+ 

@@ -1,0 +1,39 @@
+From 5d050e787f6660e3843758f04ba1bb9bca9749f3 Mon Sep 17 00:00:00 2001
+From: Alex Tsanis <alex@dragongr.dev>
+Date: Wed, 20 Jul 2022 18:28:34 +0300
+Subject: [PATCH] PreProcessing: Make procId equal to PREPROC_NUM_EFFECTS
+ regardless of uuid existence
+
+Simple, Static Analyzer says UuidToProcId will return PREPROC_NUM_EFFECTS regardles of uuid status.
+
+In that case I want you to imagine this alike assignment:
+session->effects[PREPROC_NUM_EFFECTS].session = session'.
+
+The code above stores 'session' into the same bytes that 'session->apm' occupies in line 891 and 892.
+
+It leads to a incorect use of dynamic memory during its operation.
+If we're not clearing a freed memory location, we'll have a problem.
+
+So fix that.
+
+Change-Id: Ie6d6cf2829ba895429e1ebe748b26d6b10ce3985
+Signed-off-by: Alex Tsanis <alex@dragongr.dev>
+---
+ media/libeffects/preprocessing/PreProcessing.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/media/libeffects/preprocessing/PreProcessing.cpp b/media/libeffects/preprocessing/PreProcessing.cpp
+index 19a8b2f9b96..c3f21856843 100644
+--- a/media/libeffects/preprocessing/PreProcessing.cpp
++++ b/media/libeffects/preprocessing/PreProcessing.cpp
+@@ -1528,6 +1528,10 @@ int PreProcessingLib_Create(const effect_uuid_t* uuid, int32_t sessionId, int32_
+         return -EINVAL;
+     }
+     procId = UuidToProcId(&desc->type);
++    if (procId == PREPROC_NUM_EFFECTS) {
++        ALOGE("EffectCreate: No procId found with uuid: %08x", desc->type.timeLow);
++        return -EINVAL;
++    }
+ 
+     session = PreProc_GetSession(procId, sessionId, ioId);
+     if (session == NULL) {

@@ -1,0 +1,61 @@
+From f26f226982a8e43c36056019594f70188311ebae Mon Sep 17 00:00:00 2001
+From: Alex Tsanis <alex@dragongr.dev>
+Date: Wed, 20 Jul 2022 18:09:29 +0300
+Subject: [PATCH] codecs: Fix SIGABRT on certain functions that gets sanitized
+
+signed-integer-overflow is causing SIGABRT. Let's disable it on these functions only.
+
+I don't know the way AOSP is following when it comes to sanitizers. I've come across to several ways based on their activities such as:
+Disabling sanitizer in Android.mk,
+Disabling sanitizer for specific functions.
+Modifying existing code to avoid that SIGABRT.
+
+By their activity log, this method is used at most.
+
+Change-Id: Iac3ee40bce4d59149382663502e014ad7ed6c639
+Signed-off-by: Alex Tsanis <alex@dragongr.dev>
+---
+ media/codecs/m4v_h263/enc/src/sad_inline.h    | 7 +++++++
+ media/codecs/m4v_h263/enc/src/sad_mb_offset.h | 4 ++++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/media/codecs/m4v_h263/enc/src/sad_inline.h b/media/codecs/m4v_h263/enc/src/sad_inline.h
+index b865f23c81d..200da8f4656 100644
+--- a/media/codecs/m4v_h263/enc/src/sad_inline.h
++++ b/media/codecs/m4v_h263/enc/src/sad_inline.h
+@@ -39,6 +39,10 @@ extern "C"
+         return sad;
+     }
+ 
++#if defined(__clang__)
++__attribute__((no_sanitize("signed-integer-overflow")))
++#endif
++
+     __inline int32 sad_4pixel(int32 src1, int32 src2, int32 mask)
+     {
+         int32 x7;
+@@ -78,6 +82,9 @@ extern "C"
+ #define SHIFT 8
+ #include "sad_mb_offset.h"
+ 
++#if defined(__clang__)
++__attribute__((no_sanitize("signed-integer-overflow")))
++#endif
+ 
+     __inline int32 simd_sad_mb(UChar *ref, UChar *blk, Int dmin, Int lx)
+     {
+diff --git a/media/codecs/m4v_h263/enc/src/sad_mb_offset.h b/media/codecs/m4v_h263/enc/src/sad_mb_offset.h
+index 4c7b929c60f..374ad63dd55 100644
+--- a/media/codecs/m4v_h263/enc/src/sad_mb_offset.h
++++ b/media/codecs/m4v_h263/enc/src/sad_mb_offset.h
+@@ -126,6 +126,10 @@ __inline int32 sad_mb_offset1(UChar *ref, UChar *blk, Int lx, Int dmin)
+ 
+ #elif defined(__CC_ARM)  /* only work with arm v5 */
+ 
++#if defined(__clang__)
++__attribute__((no_sanitize("signed-integer-overflow")))
++#endif
++
+ #if (NUMBER==3)
+ __inline int32 sad_mb_offset3(UChar *ref, UChar *blk, Int lx, Int dmin, int32 x8)
+ #elif (NUMBER==2)

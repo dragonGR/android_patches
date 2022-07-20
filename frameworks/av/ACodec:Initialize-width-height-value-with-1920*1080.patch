@@ -1,0 +1,49 @@
+From bd3b859a5e730151237efea970363506abe4fdad Mon Sep 17 00:00:00 2001
+From: Alex Tsanis <alex@dragongr.dev>
+Date: Wed, 20 Jul 2022 19:31:55 +0300
+Subject: [PATCH] ACodec: Initialize width/height value with 1920*1080
+
+This is a funny bug caused by those online video players upon entering full screen.
+
+Most of those players are designed poorly and they aren't designed well for the small-display devices such as a smartphone.
+In this commit, we initialize a default size to make their days easier.
+
+Set 1920*1080 resolution in a 'worst' scenario.
+Change-Id: Ib8fd4199d81aa31962916236cd068d243422f375
+
+Change-Id: I4e84390b19f8f6ddee0944779a2ce4e0b0e29d29
+Signed-off-by: Alex Tsanis <alex@dragongr.dev>
+---
+ media/libstagefright/ACodec.cpp | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 791739544c..31a8374e80 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -2028,6 +2028,12 @@ status_t ACodec::configureCodec(
+                 if (canDoAdaptivePlayback &&
+                         msg->findInt32("max-width", &maxWidth) &&
+                         msg->findInt32("max-height", &maxHeight)) {
++                    if (!maxWidth || !maxHeight) {
++                        ALOGE("No width or height, assuming worst case 1080p");
++                        maxWidth = 1920;
++                        maxHeight = 1080;
++                    }
++
+                     ALOGV("[%s] prepareForAdaptivePlayback(%dx%d)",
+                             mComponentName.c_str(), maxWidth, maxHeight);
+ 
+@@ -3532,6 +3538,12 @@ status_t ACodec::setupVideoDecoder(
+         return INVALID_OPERATION;
+     }
+ 
++    if (!width || !height) {
++        ALOGE("No width or height, assuming worst case 1080p");
++        width = 1920;
++        height = 1080;
++    }
++
+     OMX_VIDEO_CODINGTYPE compressionFormat;
+     status_t err = GetVideoCodingTypeFromMime(mime, &compressionFormat);
+ 

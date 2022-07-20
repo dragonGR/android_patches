@@ -1,0 +1,37 @@
+From 5310f8651c30876963e30bac5eb3f2e32e958b7e Mon Sep 17 00:00:00 2001
+From: dragonGR <alex@dragongr.dev>
+Date: Wed, 20 Jul 2022 16:43:30 +0300
+Subject: [PATCH] LiveSession: fix AV being out of sync when receiving
+ discontinuity
+
+Issue lies within 'DiscontinuityAbsStartTimesUs'.
+
+Audio and video (streams) use the same offsetTimeUs for the same discontinuitySeq via mDiscontinuityOffsetTimesUs.
+The stream will receive - firstly - discontinuity and use an offsetTimeUs calculated by itself for awhile
+till another streaming's discontinuity comes to play.
+In that case, the second stream has an offsetTimeUs value ready to be set to mDiscontinuityOffsetTimesUs.
+
+So, both of the streams use the same discontinuity offset times no matter what.
+Fix it by use the calculations of the first stream ONLY.
+
+Change-Id: Ibde4cdc8024651470c40da252ec79e63af77134a
+Signed-off-by: Alex Tsanis <alex@dragongr.dev>
+---
+ media/libstagefright/httplive/LiveSession.cpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/httplive/LiveSession.cpp b/media/libstagefright/httplive/LiveSession.cpp
+index 0d7caddd70..5932e80941 100644
+--- a/media/libstagefright/httplive/LiveSession.cpp
++++ b/media/libstagefright/httplive/LiveSession.cpp
+@@ -409,7 +409,9 @@ status_t LiveSession::dequeueAccessUnit(
+                     offsetTimeUs += strm.mLastSampleDurationUs;
+                 }
+ 
+-                mDiscontinuityOffsetTimesUs.add(discontinuitySeq, offsetTimeUs);
++                if (mDiscontinuityAbsStartTimesUs.indexOfKey(discontinuitySeq) < 0) {
++                    mDiscontinuityOffsetTimesUs.add(discontinuitySeq, offsetTimeUs);
++                }
+                 strm.mCurDiscontinuitySeq = discontinuitySeq;
+             }
+ 

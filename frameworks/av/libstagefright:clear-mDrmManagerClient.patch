@@ -1,0 +1,30 @@
+From 9c724b52487b58930b35a6070c1fd3c2f735bfa3 Mon Sep 17 00:00:00 2001
+From: Alex Tsanis <alex@dragongr.dev>
+Date: Wed, 20 Jul 2022 18:06:49 +0300
+Subject: [PATCH] libstagefright: clear mDrmManagerClient
+
+mDecryptHandle gets assigned to a NULL value, do the same for mDrmManagerClient.
+Change-Id: I8aaa1abd09c66b313ab1bc09d9708163d013cf17
+
+Change-Id: If747a2ff65d127e059179c8c359c9d1df8c7d226
+Signed-off-by: Alex Tsanis <alex@dragongr.dev>
+---
+ .../datasource/PlayerServiceMediaHTTP.cpp                    | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/media/libmediaplayerservice/datasource/PlayerServiceMediaHTTP.cpp b/media/libmediaplayerservice/datasource/PlayerServiceMediaHTTP.cpp
+index f99a8610b01..f66786f1300 100644
+--- a/media/libmediaplayerservice/datasource/PlayerServiceMediaHTTP.cpp
++++ b/media/libmediaplayerservice/datasource/PlayerServiceMediaHTTP.cpp
+@@ -70,6 +70,11 @@ void PlayerServiceMediaHTTP::clearDRMState_l() {
+         mDrmManagerClient->closeDecryptSession(mDecryptHandle);
+         mDecryptHandle = NULL;
+     }
++
++    if (mDrmManagerClient != NULL) {
++        delete mDrmManagerClient;
++        mDrmManagerClient = NULL;
++    }
+ }
+ 
+ }  // namespace android
