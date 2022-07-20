@@ -1,0 +1,156 @@
+From 1a1699fe36b7b94a97192036af4e25e07f9af5a7 Mon Sep 17 00:00:00 2001
+From: dragonGR <alex@dragongr.dev>
+Date: Wed, 20 Jul 2022 19:56:56 +0300
+Subject: [PATCH] BatteryStats: Remove dead code of BnBatteryStats
+
+BatteryStats uses java binder impl but not the native binder itself.
+
+Signed-off-by: Alex Tsanis <alex@dragongr.dev>
+Change-Id: Ice1874d4cd5d7b9835095e69041c553171c3c433
+---
+ libs/binder/IBatteryStats.cpp                 | 108 ------------------
+ .../batterystats/IBatteryStats.h              |  14 ---
+ 2 files changed, 122 deletions(-)
+
+diff --git a/libs/binder/IBatteryStats.cpp b/libs/binder/IBatteryStats.cpp
+index 0de804c3c2..e6c2a15ce0 100644
+--- a/libs/binder/IBatteryStats.cpp
++++ b/libs/binder/IBatteryStats.cpp
+@@ -132,112 +132,4 @@ class BpBatteryStats : public BpInterface<IBatteryStats>
+ 
+ IMPLEMENT_META_INTERFACE(BatteryStats, "com.android.internal.app.IBatteryStats")
+ 
+-// ----------------------------------------------------------------------
+-
+-// NOLINTNEXTLINE(google-default-arguments)
+-status_t BnBatteryStats::onTransact(
+-    uint32_t code, const Parcel& data, Parcel* reply, uint32_t flags)
+-{
+-    switch(code) {
+-        case NOTE_START_SENSOR_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            int uid = data.readInt32();
+-            int sensor = data.readInt32();
+-            noteStartSensor(uid, sensor);
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_STOP_SENSOR_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            int uid = data.readInt32();
+-            int sensor = data.readInt32();
+-            noteStopSensor(uid, sensor);
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_START_VIDEO_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            int uid = data.readInt32();
+-            noteStartVideo(uid);
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_STOP_VIDEO_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            int uid = data.readInt32();
+-            noteStopVideo(uid);
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_START_AUDIO_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            int uid = data.readInt32();
+-            noteStartAudio(uid);
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_STOP_AUDIO_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            int uid = data.readInt32();
+-            noteStopAudio(uid);
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_RESET_VIDEO_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            noteResetVideo();
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_RESET_AUDIO_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            noteResetAudio();
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_FLASHLIGHT_ON_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            int uid = data.readInt32();
+-            noteFlashlightOn(uid);
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_FLASHLIGHT_OFF_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            int uid = data.readInt32();
+-            noteFlashlightOff(uid);
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_START_CAMERA_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            int uid = data.readInt32();
+-            noteStartCamera(uid);
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_STOP_CAMERA_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            int uid = data.readInt32();
+-            noteStopCamera(uid);
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_RESET_CAMERA_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            noteResetCamera();
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        case NOTE_RESET_FLASHLIGHT_TRANSACTION: {
+-            CHECK_INTERFACE(IBatteryStats, data, reply);
+-            noteResetFlashlight();
+-            reply->writeNoException();
+-            return NO_ERROR;
+-        } break;
+-        default:
+-            return BBinder::onTransact(code, data, reply, flags);
+-    }
+-}
+-
+ } // namespace android
+diff --git a/libs/binder/include_batterystats/batterystats/IBatteryStats.h b/libs/binder/include_batterystats/batterystats/IBatteryStats.h
+index 6defc7fb0b..58a2242f8a 100644
+--- a/libs/binder/include_batterystats/batterystats/IBatteryStats.h
++++ b/libs/binder/include_batterystats/batterystats/IBatteryStats.h
+@@ -62,20 +62,6 @@ class IBatteryStats : public IInterface
+     };
+ };
+ 
+-// ----------------------------------------------------------------------
+-
+-class BnBatteryStats : public BnInterface<IBatteryStats>
+-{
+-public:
+-    // NOLINTNEXTLINE(google-default-arguments)
+-    virtual status_t    onTransact( uint32_t code,
+-                                    const Parcel& data,
+-                                    Parcel* reply,
+-                                    uint32_t flags = 0);
+-};
+-
+-// ----------------------------------------------------------------------
+-
+ } // namespace android
+ 
+ #else // __ANDROID_VNDK__

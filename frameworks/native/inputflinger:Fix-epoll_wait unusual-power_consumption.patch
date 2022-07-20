@@ -1,0 +1,30 @@
+From 1c94fe78eafc648f759d3d252aa00a22cab099a7 Mon Sep 17 00:00:00 2001
+From: dragonGR <alex@dragongr.dev>
+Date: Wed, 20 Jul 2022 20:10:33 +0300
+Subject: [PATCH] inputflinger: Fix epoll_wait unusual power_consumption
+
+This issue depends of the kernel mostly.
+On a sdm845 device (oneplus6), I have a scenario where  acquire_wake_lock forces freeze_processes
+to fail in a suspend routine thus causing power consumption.
+
+So, ignore EINTR of epoll_wait for real.
+
+Signed-off-by: Alex Tsanis <alex@dragongr.dev>
+Change-Id: I1764f422895bbe77275fd7156815ff00a5c29b58
+---
+ services/inputflinger/reader/EventHub.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/services/inputflinger/reader/EventHub.cpp b/services/inputflinger/reader/EventHub.cpp
+index 26c33d2a9d..f6713932d1 100644
+--- a/services/inputflinger/reader/EventHub.cpp
++++ b/services/inputflinger/reader/EventHub.cpp
+@@ -1704,7 +1704,7 @@ size_t EventHub::getEvents(int timeoutMillis, RawEvent* buffer, size_t bufferSiz
+ 
+         mLock.unlock(); // release lock before poll
+ 
+-        int pollResult = epoll_wait(mEpollFd, mPendingEventItems, EPOLL_MAX_EVENTS, timeoutMillis);
++        int pollResult = TEMP_FAILURE_RETRY(epoll_wait(mEpollFd, mPendingEventItems, EPOLL_MAX_EVENTS, timeoutMillis));
+ 
+         mLock.lock(); // reacquire lock after poll
+ 

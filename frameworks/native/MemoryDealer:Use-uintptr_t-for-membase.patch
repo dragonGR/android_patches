@@ -1,0 +1,35 @@
+From 2420cb10a591e6680a80c9e422135b91eabc830d Mon Sep 17 00:00:00 2001
+From: dragonGR <alex@dragongr.dev>
+Date: Tue, 28 Apr 2015 13:20:02 +0900
+Subject: [PATCH] MemoryDealer: use uintptr_t for membase
+
+Happens to have a significantly large value stored. So avoid that overflow.
+
+Signed-off-by: Alex Tsanis <alex@dragongr.dev>
+Change-Id: Ia138b649e5a903c30bba6eecbe2d4eebc08a9c21
+---
+ libs/binder/MemoryDealer.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libs/binder/MemoryDealer.cpp b/libs/binder/MemoryDealer.cpp
+index 03553f36e9..b6612c7ceb 100644
+--- a/libs/binder/MemoryDealer.cpp
++++ b/libs/binder/MemoryDealer.cpp
+@@ -168,7 +168,7 @@ Allocation::Allocation(
+     : MemoryBase(heap, offset, size), mDealer(dealer)
+ {
+ #ifndef NDEBUG
+-    void* const start_ptr = (void*)(intptr_t(heap->base()) + offset);
++    void* const start_ptr = (void*)(uintptr_t(heap->base()) + offset);
+     memset(start_ptr, 0xda, size);
+ #endif
+ }
+@@ -200,7 +200,7 @@ Allocation::~Allocation()
+         end &= ~(pagesize-1);
+ 
+         if (start < end) {
+-            void* const start_ptr = (void*)(intptr_t(getHeap()->base()) + start);
++            void* const start_ptr = (void*)(uintptr_t(getHeap()->base()) + start);
+             size_t size = end-start;
+ 
+ #ifndef NDEBUG

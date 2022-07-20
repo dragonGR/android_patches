@@ -1,0 +1,27 @@
+From 65e18d8401324c0d7c6913caf53823555130e19a Mon Sep 17 00:00:00 2001
+From: dragonGR <alex@dragongr.dev>
+Date: Wed, 20 Jul 2022 19:48:17 +0300
+Subject: [PATCH] installd: Address a NULL pointer dereference
+
+Make the compiler happy.
+
+Signed-off-by: Alex Tsanis <alex@dragongr.dev>
+Change-Id: I934bcc70c58a403a2ac430b7fdd9f1a0c29d508c
+---
+ cmds/installd/dexopt.cpp | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/cmds/installd/dexopt.cpp b/cmds/installd/dexopt.cpp
+index 9647865e4f..e2d4d59186 100644
+--- a/cmds/installd/dexopt.cpp
++++ b/cmds/installd/dexopt.cpp
+@@ -1778,8 +1778,7 @@ int dexopt(const char* dex_path, uid_t uid, const char* pkgname, const char* ins
+         bool downgrade, int target_sdk_version, const char* profile_name,
+         const char* dex_metadata_path, const char* compilation_reason, std::string* error_msg,
+         /* out */ bool* completed) {
+-    CHECK(pkgname != nullptr);
+-    CHECK(pkgname[0] != 0);
++    CHECK(pkgname != nullptr && pkgname[0] != 0);
+     CHECK(error_msg != nullptr);
+     CHECK_EQ(dexopt_flags & ~DEXOPT_MASK, 0)
+         << "dexopt flags contains unknown fields: " << dexopt_flags;
